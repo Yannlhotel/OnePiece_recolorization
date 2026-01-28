@@ -1,0 +1,77 @@
+# --- CONFIGURATION ---
+NAMESPACE := yalh1571
+REGISTRY := registry.datexis.com
+IMAGE_NAME := colorize-app
+TAG := latest
+FULL_IMAGE := $(REGISTRY)/$(NAMESPACE)/$(IMAGE_NAME):$(TAG)
+
+# Chemins
+LOCAL_DATA_PATH := ./data
+REMOTE_ROOT := /volume/data
+REMOTE_PATH := /volume/data/test/colored_on_cluster
+LOCAL_OUTPUT_PATH := ./data/test/colored_by_cluster
+
+# Noms des ressources K8s
+PVC_NAME := pvc-color
+TOOL_POD := tool-pod-color
+JOB_NAME := colorize-job
+
+# --- COMMANDES DOCKER ---
+build:
+	@echo "Construction de l'image Docker..."
+	docker build --platform linux/amd64 -t $(FULL_IMAGE) .
+
+push: build
+	@echo "Envoi de l'image vers le registre..."
+	docker push $(FULL_IMAGE)
+
+# --- COMMANDES INFRASTRUCTURE (PVC & TOOL POD) ---
+deploy-infra:
+	@echo "Déploiement du PVC et du Tool Pod..."
+	kubectl apply -f yaml_files/pvc-color.yaml
+	kubectl apply -f yaml_files/tool-pod-color.yaml
+	@echo "Attente que le Tool Pod soit prêt..."
+	kubectl wait --for=condition=Ready pod/$(TOOL_POD) --timeout=60s
+
+# --- TRANSFERT DE DONNÉES ---
+upload-data:
+	@echo "Nettoyage du dossier distant..."
+	kubectl exec $(TOOL_POD) -- rm -rf /volume/data
+	@echo "Copie propre des données..."
+	kubectl cp $(LOCAL_DATA_PATH) $(TOOL_POD):/volume/
+
+# --- JOB GPU ---
+run-job:
+	@echo "Suppression de l'ancien job..."
+	kubectl delete job $(JOB_NAME) --ignore-not-found=true
+	
+	@echo "Attente de nettoyage (2s)..."
+	sleep 2
+	
+	@echo "Lancement du Job de colorisation sur V100..."
+	kubectl apply -f yaml_files/colorize-job.yaml
+
+logs:
+	@echo "Attente de l'initialisation du Pod..."
+	kubectl wait --for=condition=containersReady pod -l job-name=$(JOB_NAME) --timeout=60s || true
+	@echo "Affichage des logs du job..."
+	kubectl logs -f jobs/$(JOB_NAME) -n $(NAMESPACE)
+
+# --- RÉCUPÉRATION DES RÉSULTATS ---
+get-results:
+	@echo "Création du dossier local de résultats..."
+	mkdir -p $(LOCAL_OUTPUT_PATH)
+	@echo "Téléchargement des images colorisées..."
+	kubectl cp $(TOOL_POD):$(REMOTE_PATH) $(LOCAL_OUTPUT_PATH)
+	@echo "Terminé ! Voir dossier: $(LOCAL_OUTPUT_PATH)"
+
+# --- NETTOYAGE ---
+clean:
+	@echo "Suppression de toutes les ressources..."
+	kubectl delete job $(JOB_NAME) --ignore-not-found
+	kubectl delete pod $(TOOL_POD) --ignore-not-found
+	kubectl delete pvc $(PVC_NAME) --ignore-not-found
+
+# --- RACCOURCIS ---
+setup: push deploy-infra upload-data
+update: push run-job logs
