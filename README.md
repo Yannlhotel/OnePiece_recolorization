@@ -16,8 +16,6 @@ Here is the organization of the repository:
 .
 ├── .gitignore
 ├── README.md
-├── .vscode/
-│   └── settings.json
 ├── AlgoColorization/                    # 🧪 Development Sandbox
 │   ├── colorize_example_for_cluster.py
 │   ├── Emma/                            # Emma's dev space
