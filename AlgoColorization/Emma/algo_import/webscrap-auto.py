@@ -48,8 +48,8 @@ def scrape_chapter(base_url, output_dir):
         download_image(img_url, filename)
         count += 1
 
-START_CHAPTER = 200
-END_CHAPTER = 400   # à ajuster selon ton courage / ton disque dur
+START_CHAPTER = 1
+END_CHAPTER = 50   # à ajuster selon ton courage / ton disque dur
 
 for chapter in range(START_CHAPTER, END_CHAPTER + 1):
     base_url = f"https://www.scan-vf.net/one_piece/chapitre-{chapter}"
@@ -60,5 +60,4 @@ for chapter in range(START_CHAPTER, END_CHAPTER + 1):
     print(f"\n=== Chapitre {chapter} ===")
     scrape_chapter(base_url, output_dir)
 
-    # pause pour éviter de marteler le serveur comme un bourrin
     time.sleep(1.5)

@@ -8,3 +8,7 @@ pandas
 opencv-python
 numpy
 matplotlib
+Pillow
+bs4
+requests
+tifffile
