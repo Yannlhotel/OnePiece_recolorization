@@ -10,6 +10,6 @@ numpy
 matplotlib
 Pillow
 bs4
+torch 
 requests
 tifffile
-torch

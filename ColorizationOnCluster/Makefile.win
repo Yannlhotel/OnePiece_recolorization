@@ -5,74 +5,75 @@ IMAGE_NAME := colorize-app
 TAG := latest
 FULL_IMAGE := $(REGISTRY)/$(NAMESPACE)/$(IMAGE_NAME):$(TAG)
 
-# Chemins (Adapté pour WSL/Linux, voir note en bas pour Windows natif)
-# On suppose que le Makefile est dans le dossier parent de "data"
+# Paths (Adapted for WSL/Linux, see note below for native Windows)
+# Assumes Makefile is in parent folder of "data"
 LOCAL_DATA_PATH := ./data
 REMOTE_ROOT := /volume/data
-REMOTE_PATH := /volume/data/test/colored_on_cluster
-LOCAL_OUTPUT_PATH := ./data/test/colored_by_cluster
+REMOTE_PATH := /volume/data/val/colored_on_cluster
+LOCAL_OUTPUT_PATH := ./data/val/colored_by_cluster
 
-# Noms des ressources K8s
+# Kubernetes resource names
 PVC_NAME := pvc-color
 TOOL_POD := tool-pod-color
 JOB_NAME := colorize-job
 
-# --- COMMANDES DOCKER ---
+# --- DOCKER COMMANDS ---
 build:
-	@echo "Construction de l'image Docker..."
+	@echo "Building Docker image..."
 	docker build --platform linux/amd64 -t $(FULL_IMAGE) .
 
 push: build
-	@echo "Envoi de l'image vers le registre..."
+	@echo "Pushing image to registry..."
 	docker push $(FULL_IMAGE)
 
-# --- COMMANDES INFRASTRUCTURE (PVC & TOOL POD) ---
+# --- INFRASTRUCTURE COMMANDS (PVC & TOOL POD) ---
 deploy-infra:
-	@echo "Déploiement du PVC et du Tool Pod..."
+	@echo "Deploying PVC and Tool Pod..."
 	kubectl apply -f yaml_files/pvc-color.yaml
 	kubectl apply -f yaml_files/tool-pod-color.yaml
-	@echo "Attente que le Tool Pod soit prêt..."
+	@echo "Waiting for Tool Pod to be ready..."
 	kubectl wait --for=condition=Ready pod/$(TOOL_POD) --timeout=60s
 
-# --- TRANSFERT DE DONNÉES ---
+# --- DATA TRANSFER ---
 upload-data:
-	@echo "Nettoyage du dossier distant..."
+	@echo "Cleaning remote folder..."
 	kubectl exec $(TOOL_POD) -- rm -rf /volume/data
 
-	@echo "Copie propre des données..."
+	@echo "Copying data..."
 	kubectl cp $(LOCAL_DATA_PATH) $(TOOL_POD):/volume/
 	
-# --- JOB GPU ---
+# --- GPU JOB ---
 run-job:
-	@echo "Suppression de l'ancien job..."
+	@echo "Deleting previous job..."
 	kubectl delete job $(JOB_NAME) --ignore-not-found=true
 	powershell -Command "Start-Sleep -Seconds 2"
-	@echo "Lancement du Job de colorisation sur V100..."
+	@echo "Starting colorization job on V100..."
 	kubectl apply -f yaml_files/colorize-job.yaml
 
 logs:
-	kubectl wait --for=condition=containersReady pod -l job-name=$(JOB_NAME) --timeout=60s || true
-	@echo "Affichage des logs du job..."
-	kubectl logs -f jobs/$(JOB_NAME) -n yalh1571
-
-# --- RÉCUPÉRATION DES RÉSULTATS ---
+	@echo "Waiting for pod (may fail if timeout)..."
+	-kubectl wait --for=condition=containersReady pod -l job-name=$(JOB_NAME) --timeout=60s
+	@echo "Displaying logs..."
+	kubectl logs -f jobs/$(JOB_NAME) -n $(NAMESPACE)
+	
+# --- RETRIEVE RESULTS ---
 get-results:
-	@echo "Création du dossier local de résultats..."
+	@echo "Creating local results folder..."
 	powershell -Command "New-Item -ItemType Directory -Force -Path $(LOCAL_OUTPUT_PATH)"
-	@echo "Téléchargement des images colorisées..."
+	@echo "Downloading colorized images..."
 	kubectl cp $(TOOL_POD):$(REMOTE_PATH) $(LOCAL_OUTPUT_PATH)
-	@echo "Terminé ! Voir dossier: $(LOCAL_OUTPUT_PATH)"
+	@echo "Done! See folder: $(LOCAL_OUTPUT_PATH)"
 
-# --- NETTOYAGE ---
+# --- CLEANUP ---
 clean:
-	@echo "Suppression de toutes les ressources..."
+	@echo "Deleting all resources..."
 	kubectl delete job $(JOB_NAME) --ignore-not-found
 	kubectl delete pod $(TOOL_POD) --ignore-not-found
 	kubectl delete pvc $(PVC_NAME) --ignore-not-found
 
-# --- RACCOURCIS ---
-# Setup complet : Build image -> Deploy Infra -> Upload Data
+# --- SHORTCUTS ---
+# Complete setup: Build image -> Deploy Infra -> Upload Data
 setup: push deploy-infra upload-data
 
-# Cycle de dev : Modifie code -> Re-build -> Relance Job
+# Dev cycle: Edit code -> Re-build -> Relaunch Job
 update: push run-job

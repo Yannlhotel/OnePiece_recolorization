@@ -1,15 +1,15 @@
-# Détection du système d'exploitation
+# Operating system detection
 ifeq ($(OS),Windows_NT)
     TARGET_MAKEFILE := Makefile.win
 else
     TARGET_MAKEFILE := Makefile.linux
 endif
 
-# Cette règle "attrape-tout" (%) redirige n'importe quelle commande (ex: make setup)
-# vers le fichier cible (ex: make -f Makefile.win setup)
+# This catch-all rule (%) redirects any command (e.g., make setup)
+# to the target file (e.g., make -f Makefile.win setup)
 %:
 	@make -f $(TARGET_MAKEFILE) $@
 
-# Gestion du cas où on lance juste "make" sans argument (par défaut : help ou setup)
+# Handle the case where "make" is called without arguments (default: help or setup)
 default:
 	@make -f $(TARGET_MAKEFILE)
