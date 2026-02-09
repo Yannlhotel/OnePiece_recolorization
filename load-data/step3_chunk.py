@@ -75,11 +75,11 @@ def chunkify(img_path, chunk_size=(512, 512), overlap_ratio=0.1):
             if C is None:
                 # Black & White
                 patch = img[y : y + ch, x : x + cw]
-                tiff.imwrite(out_path, patch, compression="deflate")
+                tiff.imwrite(out_path, patch, compression="zlib")
             else:
                 # Color (LAB)
                 patch = img[y : y + ch, x : x + cw, :]
-                tiff.imwrite(out_path, patch, compression="deflate", photometric="CIELAB")
+                tiff.imwrite(out_path, patch, compression="zlib")
 
             chunk_count += 1
 

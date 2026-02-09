@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-import tifffile as tiff  # INDISPENSABLE pour lire les données LAB brutes
+import tifffile as tiff
 
 # --- 1. CONFIGURATION CLUSTER ---
 BASE_PATH = os.getenv("BASE_PATH", "/volume/data")
