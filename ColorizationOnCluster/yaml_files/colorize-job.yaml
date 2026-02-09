@@ -12,7 +12,7 @@ spec:
       - name: private-registry-auth
       containers:
       - name: colorize-container
-        image: registry.datexis.com/yalh1571/colorize-app:latest
+        image: registry.datexis.com/ypwm9256/colorize-app:latest
         resources:
           limits:
             nvidia.com/gpu: 1

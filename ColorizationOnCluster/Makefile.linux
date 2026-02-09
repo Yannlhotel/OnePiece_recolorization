@@ -1,5 +1,5 @@
 # --- CONFIGURATION ---
-NAMESPACE := yalh1571
+NAMESPACE := ypwm9256
 REGISTRY := registry.datexis.com
 IMAGE_NAME := colorize-app
 TAG := latest
