@@ -22,7 +22,7 @@ EPOCHS = 10
 LEARNING_RATE = 2e-4
 IMG_SIZE = 512
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-LOSS_TYPE = "MAELoss"
+LOSS_TYPE = "L1Loss"
 
 print(f"--- CONFIGURATION ({LOSS_TYPE}) ---")
 print(f"Device: {DEVICE}")

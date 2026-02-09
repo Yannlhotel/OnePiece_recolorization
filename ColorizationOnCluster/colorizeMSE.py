@@ -22,7 +22,7 @@ EPOCHS = 10
 LEARNING_RATE = 2e-4
 IMG_SIZE = 512
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-LOSS_TYPE = "MAELoss"
+LOSS_TYPE = "MSELoss"
 
 print(f"--- CONFIGURATION ({LOSS_TYPE}) ---")
 print(f"Device: {DEVICE}")
@@ -123,7 +123,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
     # --- CONFIGURATION LOSS ICI ---
-    criterion = nn.L1Loss() 
+    criterion = nn.MSELoss() 
     # ------------------------------
 
     train_ds = ClusterDataset(TRAIN_BW, TRAIN_COLOR, mode='train')
