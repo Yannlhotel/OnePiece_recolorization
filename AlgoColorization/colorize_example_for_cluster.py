@@ -7,10 +7,10 @@ import pandas as pd
 print(f"Environnement actuel : {os.getcwd()}")
 
 BASE_PATH = os.getenv("BASE_PATH", "/volume/data")
-TRAIN_GRAY = os.path.join(BASE_PATH, "train/gray")
-TRAIN_COLOR = os.path.join(BASE_PATH, "train/color")
-TEST_GRAY = os.path.join(BASE_PATH, "test/gray")
-OUTPUT_COLOR = os.path.join(BASE_PATH, "test/colored_on_cluster")
+TRAIN_GRAY = os.path.join(BASE_PATH, "train/bw")
+TRAIN_COLOR = os.path.join(BASE_PATH, "train/images")
+TEST_GRAY = os.path.join(BASE_PATH, "val/bw")
+OUTPUT_COLOR = os.path.join(BASE_PATH, "val/colored_on_cluster")
 
 def get_all_images(directory):
     if not os.path.exists(directory):
@@ -30,7 +30,7 @@ def main():
     l_train_color = get_all_images(TRAIN_COLOR)
     l_test_gray = get_all_images(TEST_GRAY)
 
-    print(f"Lecture validée : {len(l_train_gray)} train/gray, {len(l_train_color)} train/color.")
+    print(f"Lecture validée : {len(l_train_gray)} train/bw, {len(l_train_color)} train/images.")
     
     # 3. Traitement effectif des images de test
     print(f"Traitement de {len(l_test_gray)} images de test...")
