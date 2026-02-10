@@ -60,8 +60,9 @@ logs:
 get-results:
 	@echo "Creating local results folder..."
 	powershell -Command "New-Item -ItemType Directory -Force -Path $(LOCAL_OUTPUT_PATH)"
-	@echo "Downloading colorized images..."
+	@echo "Downloading colorized images... and if not metrics : kubectl cp tool-pod-color:/volume/data/val/colored_on_cluster/metrics.txt  ./data/val/colored_by_cluster/metrics.txt"
 	kubectl cp $(TOOL_POD):$(REMOTE_PATH) $(LOCAL_OUTPUT_PATH)
+	
 	@echo "Done! See folder: $(LOCAL_OUTPUT_PATH)"
 
 # --- CLEANUP ---

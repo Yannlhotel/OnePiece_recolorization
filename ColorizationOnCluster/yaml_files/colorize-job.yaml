@@ -16,6 +16,11 @@ spec:
         resources:
           limits:
             nvidia.com/gpu: 1
+            memory: "8Gi"  # Recommandé : Limite explicite
+            cpu: "4"       # Recommandé : 1 cœur par worker
+          requests:        # Important pour garantir les ressources aux workers
+            cpu: "4"
+            memory: "4Gi"
         env:
           - name: BASE_PATH
             value: "/volume/data"
@@ -24,10 +29,15 @@ spec:
         volumeMounts:
         - name: data-volume
           mountPath: /volume
+        - name: dshm              # <-- 1. Monter le volume de mémoire partagée
+          mountPath: /dev/shm
       nodeSelector:
-        gpu: v100 # C'est ici qu'on demande spécifiquement la V100
+        gpu: v100
       volumes:
       - name: data-volume
         persistentVolumeClaim:
           claimName: pvc-color
+      - name: dshm                # <-- 2. Créer le volume en mémoire RAM
+        emptyDir:
+          medium: Memory
       restartPolicy: Never
