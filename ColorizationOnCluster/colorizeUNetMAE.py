@@ -22,7 +22,7 @@ EPOCHS = 10
 LEARNING_RATE = 2e-4
 IMG_SIZE = 512
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-LOSS_TYPE = "MSELoss"
+LOSS_TYPE = "L1Loss"
 
 print(f"--- CONFIGURATION ({LOSS_TYPE}) ---")
 print(f"Device: {DEVICE}")
@@ -42,27 +42,74 @@ class ResidualBlock(nn.Module):
         )
     def forward(self, x): return x + self.conv(x)
 
-class DeepColor512(nn.Module):
-    def __init__(self):
-        super(DeepColor512, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=4, stride=2, padding=1), nn.ReLU(True),
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1), nn.BatchNorm2d(128), nn.ReLU(True),
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1), nn.BatchNorm2d(256), nn.ReLU(True),
-        )
-        self.res_blocks = nn.Sequential(ResidualBlock(256), ResidualBlock(256), ResidualBlock(256))
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1), nn.ReLU(True),
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1), nn.ReLU(True),
-            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1), nn.ReLU(True),
-            nn.Conv2d(32, 2, kernel_size=3, padding=1), nn.Tanh()
-        )
-    def forward(self, x):
-        x = self.encoder(x)
-        x = self.res_blocks(x)
-        x = self.decoder(x)
-        return x
+class UNetBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, up=False):
+        super().__init__()
+        if up:
+            self.conv = nn.Sequential(
+                nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(True)
+            )
+        else:
+            self.conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.LeakyReLU(0.2, True)
+            )
 
+    def forward(self, x):
+        return self.conv(x)
+
+class OnePieceUNet(nn.Module):
+    def __init__(self):
+        super(OnePieceUNet, self).__init__()
+        
+        # Encodeur (Descente)
+        self.e1 = nn.Conv2d(1, 64, 4, 2, 1) # 512 -> 256
+        self.e2 = UNetBlock(64, 128)        # 256 -> 128
+        self.e3 = UNetBlock(128, 256)       # 128 -> 64
+        self.e4 = UNetBlock(256, 512)       # 64 -> 32
+        
+        # Bottleneck (Le bas du U)
+        self.res = nn.Sequential(ResidualBlock(512), ResidualBlock(512))
+        
+        # Décodeur (Remontée avec Skip Connections)
+        # On multiplie les canaux par 2 à l'entrée car on concatène avec l'encodeur
+        self.d4 = UNetBlock(512, 256, up=True) 
+        self.d3 = UNetBlock(256 + 256, 128, up=True) # +256 venant de e3
+        self.d2 = UNetBlock(128 + 128, 64, up=True)  # +128 venant de e2
+        self.d1 = UNetBlock(64 + 64, 32, up=True)    # +64 venant de e1
+        
+        # Couche finale pour retrouver la taille originale et les 2 canaux (a, b)
+        self.final = nn.Sequential(
+            nn.Conv2d(32, 2, kernel_size=3, padding=1),
+            nn.Tanh()
+        )
+
+    def forward(self, x):
+        # Forward Encodeur
+        s1 = self.e1(x)
+        s2 = self.e2(s1)
+        s3 = self.e3(s2)
+        s4 = self.e4(s3)
+        
+        # Bottleneck
+        out = self.res(s4)
+        
+        # Forward Décodeur avec Concaténation (skip connections)
+        out = self.d4(out)
+        out = torch.cat([out, s3], dim=1) # On recolle les détails de s3
+        
+        out = self.d3(out)
+        out = torch.cat([out, s2], dim=1) # On recolle les détails de s2
+        
+        out = self.d2(out)
+        out = torch.cat([out, s1], dim=1) # On recolle les détails de s1
+        
+        out = self.d1(out)
+        return self.final(out)
+    
 # --- 3. DATASET MANAGER ---
 class ClusterDataset(Dataset):
     def __init__(self, bw_dir, color_dir, mode='train'):
@@ -119,11 +166,11 @@ def lab_to_bgr(l_t, ab_t):
 
 # --- 5. MAIN ---
 def main():
-    model = DeepColor512().to(DEVICE)
+    model = OnePieceUNet().to(DEVICE)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     
     # --- CONFIGURATION LOSS ICI ---
-    criterion = nn.MSELoss() 
+    criterion = nn.L1Loss() 
     # ------------------------------
 
     train_ds = ClusterDataset(TRAIN_BW, TRAIN_COLOR, mode='train')
@@ -216,6 +263,7 @@ def main():
         f.write(f"Final MAE (Tensor): {avg_mae:.6f}\n")
         f.write(f"Final PSNR (RGB):   {avg_psnr:.4f} dB\n")
         f.write(f"Final SSIM (RGB):   {avg_ssim:.4f}\n")
+        torch.save(model.state_dict(), os.path.join(OUTPUT_COLOR, "onepiece_unet_final.pth"))
 
 if __name__ == "__main__":
     main()

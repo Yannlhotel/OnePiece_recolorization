@@ -216,6 +216,7 @@ def main():
         f.write(f"Final MAE (Tensor): {avg_mae:.6f}\n")
         f.write(f"Final PSNR (RGB):   {avg_psnr:.4f} dB\n")
         f.write(f"Final SSIM (RGB):   {avg_ssim:.4f}\n")
+        torch.save(model.state_dict(), os.path.join(OUTPUT_COLOR, "onepiece_unet_final.pth"))
 
 if __name__ == "__main__":
     main()
