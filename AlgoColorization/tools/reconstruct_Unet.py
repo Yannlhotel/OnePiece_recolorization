@@ -7,9 +7,9 @@ import tifffile as tiff
 from PIL import Image
 
 # --- CONFIGURATION ---
-INPUT_IMAGE = "dataset_one_piece/01_raw_webp/chapitre_1/page_004.webp" 
-OUTPUT_IMAGE = "AlgoColorization/Yann/Unet_2/reconstructed.jpg"
-MODEL_PATH = "AlgoColorization/Yann/Unet_2/model.pth"  # Ton nouveau fichier de poids
+INPUT_IMAGE = "dataset_one_piece/01_raw_webp/chapitre_1/page_001.webp" 
+OUTPUT_IMAGE = "AlgoColorization/Yann/Unet_3/reconstructed.jpg"
+MODEL_PATH = "AlgoColorization/Yann/Unet_3/model.pth"  # Ton nouveau fichier de poids
 CHUNK_SIZE = 512
 OVERLAP = 0.1
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

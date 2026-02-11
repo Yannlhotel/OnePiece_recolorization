@@ -8,8 +8,8 @@ from PIL import Image
 from tqdm import tqdm  # Barre de progression (pip install tqdm)
 
 # --- CONFIGURATION ---
-INPUT_DIR = "best_model_test"              # Dossier contenant tes images sources
-OUTPUT_DIR = "best_model_test/output_results"   # Dossier où seront sauvées les images colorisées
+INPUT_DIR = "draft"    # Dossier contenant tes images sources
+OUTPUT_DIR = "draft/output_results"   # Dossier où seront sauvées les images colorisées
 MODEL_PATH = "AlgoColorization/Yann/DeepColor512_1/model.pth"
 CHUNK_SIZE = 512
 OVERLAP = 0.1
