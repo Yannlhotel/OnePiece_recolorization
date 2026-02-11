@@ -8,3 +8,12 @@ MAX_PAGES = 50
 # --- CHUNKING PARAMETERS ---
 CHUNK_SIZE = (512, 512)
 OVERLAP_RATIO = 0.1
+
+Epochs: 10
+Batch Size: 8
+Learning Rate: 0.0002
+--------------------
+Final MSE (Tensor): 0.006391
+Final MAE (Tensor): 0.048236
+Final PSNR (RGB):   22.7949 dB
+Final SSIM (RGB):   0.9457
