@@ -1,0 +1,10 @@
+Model: DeepColor512
+Loss Function Used: MAELoss
+Epochs: 10
+Batch Size: 8
+Learning Rate: 0.0002
+--------------------
+Final MSE (Tensor): 0.008865
+Final MAE (Tensor): 0.039215
+Final PSNR (RGB):   23.8249 dB
+Final SSIM (RGB):   0.9602
