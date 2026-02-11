@@ -70,3 +70,13 @@ class UNet(nn.Module):
         # Final output
         final_out = self.final_up(torch.cat([u6, d1], 1))
         return self.tanh(final_out)
+    
+
+if __name__ == "__main__":
+    # Enregistrer une image n&b en RGB pour test
+    import cv2
+    import numpy as np
+    image = cv2.imread("./AlgoColorization/Quentin/model_test/02.jpg", cv2.IMREAD_GRAYSCALE)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+    cv2.imwrite("./AlgoColorization/Quentin/model_test/02_rgb.jpg", image_rgb)
+    
