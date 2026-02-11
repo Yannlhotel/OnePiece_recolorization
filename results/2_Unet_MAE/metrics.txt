@@ -1,0 +1,10 @@
+Model: OnePieceU-Net
+Loss Function Used: L1Loss
+Epochs: 10
+Batch Size: 8
+Learning Rate: 0.0002
+--------------------
+Final MSE (Tensor): 0.010506
+Final MAE (Tensor): 0.043556
+Final PSNR (RGB):   22.9140 dB
+Final SSIM (RGB):   0.9516
