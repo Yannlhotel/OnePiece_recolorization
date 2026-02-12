@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: colorize-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: colorize-job
+    spec:
+      imagePullSecrets:
+      - name: private-registry-auth
+      containers:
+      - name: colorize-container
+        image: registry.datexis.com/<bht-account>/colorize-app:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+            memory: "8Gi"  # Recommandé : Limite explicite
+            cpu: "4"       # Recommandé : 1 cœur par worker
+          requests:        # Important pour garantir les ressources aux workers
+            cpu: "4"
+            memory: "4Gi"
+        env:
+          - name: BASE_PATH
+            value: "/volume/data"
+          - name: EPOCHS
+            value: "10"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /volume
+        - name: dshm              # <-- 1. Monter le volume de mémoire partagée
+          mountPath: /dev/shm
+      nodeSelector:
+        gpu: v100
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: pvc-color
+      - name: dshm                # <-- 2. Créer le volume en mémoire RAM
+        emptyDir:
+          medium: Memory
+      restartPolicy: Never

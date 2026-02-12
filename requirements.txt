@@ -1,0 +1,9 @@
+pandas
+pillow 
+opencv-python
+numpy
+matplotlib
+bs4
+requests
+tifffile
+torch

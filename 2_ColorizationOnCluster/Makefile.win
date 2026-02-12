@@ -1,0 +1,80 @@
+# --- CONFIGURATION ---
+NAMESPACE := yalh1571
+REGISTRY := registry.datexis.com
+IMAGE_NAME := colorize-app
+TAG := latest
+FULL_IMAGE := $(REGISTRY)/$(NAMESPACE)/$(IMAGE_NAME):$(TAG)
+
+# Paths (Adapted for WSL/Linux, see note below for native Windows)
+# Assumes Makefile is in parent folder of "data"
+LOCAL_DATA_PATH := ./data
+REMOTE_ROOT := /volume/data
+REMOTE_PATH := /volume/data/val/colored_on_cluster
+LOCAL_OUTPUT_PATH := ./data/val/colored_by_cluster
+
+# Kubernetes resource names
+PVC_NAME := pvc-color
+TOOL_POD := tool-pod-color
+JOB_NAME := colorize-job
+
+# --- DOCKER COMMANDS ---
+build:
+	@echo "Building Docker image..."
+	docker build --platform linux/amd64 -t $(FULL_IMAGE) .
+
+push: build
+	@echo "Pushing image to registry..."
+	docker push $(FULL_IMAGE)
+
+# --- INFRASTRUCTURE COMMANDS (PVC & TOOL POD) ---
+deploy-infra:
+	@echo "Deploying PVC and Tool Pod..."
+	kubectl apply -f yaml_files/pvc-color.yaml
+	kubectl apply -f yaml_files/tool-pod-color.yaml
+	@echo "Waiting for Tool Pod to be ready..."
+	kubectl wait --for=condition=Ready pod/$(TOOL_POD) --timeout=60s
+
+# --- DATA TRANSFER ---
+upload-data:
+	@echo "Cleaning remote folder..."
+	kubectl exec $(TOOL_POD) -- rm -rf /volume/data
+
+	@echo "Copying data..."
+	kubectl cp $(LOCAL_DATA_PATH) $(TOOL_POD):/volume/
+	
+# --- GPU JOB ---
+run-job:
+	@echo "Deleting previous job..."
+	kubectl delete job $(JOB_NAME) --ignore-not-found=true
+	powershell -Command "Start-Sleep -Seconds 2"
+	@echo "Starting colorization job on V100..."
+	kubectl apply -f yaml_files/colorize-job.yaml
+
+logs:
+	@echo "Waiting for pod (may fail if timeout)..."
+	-kubectl wait --for=condition=containersReady pod -l job-name=$(JOB_NAME) --timeout=60s
+	@echo "Displaying logs..."
+	kubectl logs -f jobs/$(JOB_NAME) -n $(NAMESPACE)
+	
+# --- RETRIEVE RESULTS ---
+get-results:
+	@echo "Creating local results folder..."
+	powershell -Command "New-Item -ItemType Directory -Force -Path $(LOCAL_OUTPUT_PATH)"
+	@echo "Downloading colorized images... and if not metrics : kubectl cp tool-pod-color:/volume/data/val/colored_on_cluster/metrics.txt  ./data/val/colored_by_cluster/metrics.txt"
+	kubectl cp $(TOOL_POD):$(REMOTE_PATH) $(LOCAL_OUTPUT_PATH)
+	
+	@echo "Done! See folder: $(LOCAL_OUTPUT_PATH)"
+
+# --- CLEANUP ---
+clean:
+	@echo "Deleting all resources..."
+	kubectl delete job $(JOB_NAME) --ignore-not-found
+	kubectl delete pod $(TOOL_POD) --ignore-not-found
+	kubectl delete pvc $(PVC_NAME) --ignore-not-found
+
+# --- SHORTCUTS ---
+# Complete setup: Build image -> Deploy Infra -> Upload Data
+setup: push deploy-infra upload-data
+
+# Dev cycle: Edit code -> Re-build -> Relaunch Job
+update: push run-job

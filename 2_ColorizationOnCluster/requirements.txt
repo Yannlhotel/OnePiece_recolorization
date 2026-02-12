@@ -1,0 +1,16 @@
+transformers==4.48.2
+pandas==2.2.3
+kagglehub==0.3.6
+ipywidgets==8.1.5
+torchvision 
+pillow 
+pandas
+opencv-python
+numpy
+matplotlib
+Pillow
+bs4
+torch 
+requests
+tifffile
+scikit-image
