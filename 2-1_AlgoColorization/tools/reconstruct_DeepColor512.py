@@ -8,9 +8,9 @@ from PIL import Image
 from tqdm import tqdm  
 
 # --- CONFIGURATION ---
-INPUT_DIR = "best_model_test"    # Dossier contenant tes images sources
-OUTPUT_DIR = "best_model_test/output_results"   # Dossier où seront sauvées les images colorisées
-MODEL_PATH = "AlgoColorization/results/1_DeepColor512_MSE/model.pth"
+INPUT_DIR = "results/1_DeepColor512_MSE/img/original"    # Dossier contenant tes images sources
+OUTPUT_DIR = "results/1_DeepColor512_MSE/img/colored"   # Dossier où seront sauvées les images colorisées
+MODEL_PATH = "results/1_DeepColor512_MSE/model.pth"
 CHUNK_SIZE = 512
 OVERLAP = 0.1
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
