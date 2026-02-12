@@ -12,7 +12,7 @@ from model import UNet
 # --- CONFIGURATION ---
 INPUT_DIR = "AlgoColorization/Quentin/model_test"              # Dossier contenant tes images sources
 OUTPUT_DIR = "AlgoColorization/Quentin/model_test_output"   # Dossier où seront sauvées les images colorisées
-MODEL_PATH = "AlgoColorization/Quentin/other_colorization_model.pth"
+MODEL_PATH = "AlgoColorization/Quentin/model.pth"
 CHUNK_SIZE = 512
 OVERLAP = 0.1
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -70,7 +70,7 @@ def get_axis_coords(total_size, chunk_size, overlap_ratio=0.1):
 
 def load_model(path, device):
     print(f"Loading model from {path}...")
-    model = UNet().to(device)
+    model = DeepColor512().to(device)
     if os.path.exists(path):
         state_dict = torch.load(path, map_location=device)
         model.load_state_dict(state_dict)
