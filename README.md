@@ -106,14 +106,8 @@ See [1_load-data/README.md](1_load-data/README.md) for detailed configuration op
 
 ### 2. Develop Locally
 
-Test algorithms in the development folder:
-
-```bash
-cd 2-1_AlgoColorization
-python your_script.py
-```
-
-Each team member has a dedicated subfolder for experimentation.
+Test algorithms in the development folder
+Then copy it `2_ColorizationOnCluster/colorize.py`
 
 ### 3. Deploy to Cluster
 
